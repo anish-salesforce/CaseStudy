@@ -1,0 +1,65 @@
+name: Create Pull Request Delta
+
+on:
+  pull_request:
+    # The events are that a PR is opened, or when a commit is pushed
+    # to a branch that has an existing pull request
+    types: [opened, synchronize]
+    # The branches filter allows to specify that this workflow should only
+    # run if the branch name is "develop". This way we prevent this workflow
+    # from running when PRs are opened on other branches
+    branches: [develop]
+    # We only care about changes to the force-app directory, which is the
+    # root directory of the sfdx project. This prevents the job from running
+    # when changing non-salesforce files (like this yml file).
+    paths:
+      - 'force-app/**'
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    container:
+      image: salesforce/cli:latest-full
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout from GIT. We checkout both HEAD and BASE branches to generate DELTA
+        run: |
+          export HOME=/root
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+          git fetch --all
+          git checkout ${{ github.BASE_REF }}
+          git checkout ${{ github.HEAD_REF }}
+
+      - name: Install sfdx-git-delta
+        run: |
+          echo y | sf plugins install sfdx-git-delta
+          sf plugins install @salesforce/sfdx-scanner
+          sf plugins
+
+      # Authenticate with JWT
+      - name: Authenticate JWT
+        run: |
+          echo "${{ secrets.SERVER_KEY }}" > SERVER_KEY.key
+          sf org login jwt --client-id ${{ vars.CLIENT_ID }} --jwt-key-file SERVER_KEY.key --username ${{ vars.USERNAME }} --set-default
+
+      # We use SFDX Git Delta to create a directory with only the metadata that has changed.
+      # this allows us to deploy only those changes, as opposed to deploying the entire branch.
+      # This helps reducing deployment times
+      # - name: 'Create delta packages for new, modified or deleted metadata'
+      #   run: |
+      #     mkdir ./devops/changed-sources
+      #     sf sgd source delta --to origin/${{ github.base_ref }} --from origin/${{ github.head_ref }} --output-dir ./devops/changed-sources/ --generate-delta --source-dir force-app/
+
+      - name: 'Create delta packages for new, modified or deleted metadata'
+        run: |
+          mkdir ./devops/changed-sources
+          sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./devops/changed-sources/ --generate-delta --source-dir force-app/
+
+      - name: Validate
+        run: sf project deploy start --dry-run -x ./devops/changed-sources/package/package.xml --test-level ${{ steps.calculate_test_class.outputs.testLevel }} ${{ steps.calculate_test_class.outputs.testClassesToRun }} --verbose
