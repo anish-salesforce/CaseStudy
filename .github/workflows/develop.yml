@@ -45,8 +45,8 @@ jobs:
       # Authenticate with JWT
       - name: Authenticate JWT
         run: |
-          echo "${{ secrets.SERVER_KEY }}" > SERVER_KEY.key
-          sf org login jwt --client-id ${{ vars.CLIENT_ID }} --jwt-key-file SERVER_KEY.key --username ${{ vars.USERNAME }} --set-default
+          echo "${{ secrets.GLOBALQA_SERVER_KEY }}" > GLOBALQA_SERVER_KEY.key
+          sf org login jwt --client-id ${{ vars.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ vars.GLOBALQA_USERNAME }} --set-default
 
       # We use SFDX Git Delta to create a directory with only the metadata that has changed.
       # this allows us to deploy only those changes, as opposed to deploying the entire branch.
@@ -60,6 +60,8 @@ jobs:
         run: |
           mkdir ./devops/changed-sources
           sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./devops/changed-sources/ --generate-delta --source-dir force-app/
+          cat ./devops/changed-sources/package/package.xml
+          cat ./devops/changed-sources/destructiveChanges/destructiveChanges.xml
 
       - name: Validate
         run: sf project deploy start --dry-run -x ./devops/changed-sources/package/package.xml --test-level ${{ steps.calculate_test_class.outputs.testLevel }} ${{ steps.calculate_test_class.outputs.testClassesToRun }} --verbose
