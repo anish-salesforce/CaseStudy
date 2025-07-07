@@ -29,7 +29,6 @@ jobs:
 
       - name: Checkout from GIT. We checkout both HEAD and BASE branches to generate DELTA
         run: |
-          export HOME=/root
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
           git fetch --all
@@ -47,10 +46,9 @@ jobs:
 
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
-          export HOME=/root
           mkdir force-app-delta
           FROM_REF=$(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }})
-          sfdx sgd:source:delta --to ${{ github.HEAD_REF }} --from $FROM_REF --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
+          sf sgd source delta --to ${{ github.HEAD_REF }} --from $FROM_REF --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
@@ -70,5 +68,4 @@ jobs:
 
       - name: Validate
         run: |
-          export HOME=/root
           sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level ${{ steps.calculate_test_class.outputs.testLevel }} ${{ steps.calculate_test_class.outputs.testClassesToRun }} --verbose
