@@ -46,7 +46,7 @@ jobs:
         run: |
           export HOME=/root
           mkdir force-app-delta
-          'sf sgd source delta --to origin/${{ github.HEAD_REF }} --from $(git merge-base origin/${{ github.HEAD_REF }} oriign/${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/'
+          sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
