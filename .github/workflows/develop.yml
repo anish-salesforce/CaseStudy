@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: salesforce/cli:latest-full
-    steps:
 
+    steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
@@ -41,12 +41,12 @@ jobs:
           echo y | sf plugins install sfdx-git-delta
           sf plugins install @salesforce/sfdx-scanner
           sf plugins
-          
+
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           export HOME=/root
           mkdir force-app-delta
-          pwsh -c 'sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/'
+          'sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/'
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
