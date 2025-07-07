@@ -40,14 +40,17 @@ jobs:
         run: |
           echo y | sf plugins install sfdx-git-delta
           sf plugins install @salesforce/sfdx-scanner
+          echo ">>>>>>>>"
           sf plugins
+          echo ">>>>>>>>"
+          sf version
 
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           export HOME=/root
           mkdir force-app-delta
           FROM_REF=$(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }})
-          sf sgd source delta --to ${{ github.HEAD_REF }} --from $FROM_REF --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
+          sfdx sgd:source:delta --to ${{ github.HEAD_REF }} --from $FROM_REF --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
