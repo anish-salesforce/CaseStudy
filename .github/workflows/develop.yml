@@ -41,6 +41,14 @@ jobs:
           echo y | sf plugins install sfdx-git-delta
           sf plugins install @salesforce/sfdx-scanner
           sf plugins
+          
+      - name: 'Create delta packages for new, modified or deleted metadata'
+        run: |
+          export HOME=/root
+          mkdir force-app-delta
+          pwsh -c 'sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/'
+          cat ./force-app-delta/package/package.xml
+          cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
       # Authenticate with JWT
       - name: Authenticate JWT
@@ -55,14 +63,6 @@ jobs:
       #   run: |
       #     mkdir ./devops/changed-sources
       #     sf sgd source delta --to origin/${{ github.base_ref }} --from origin/${{ github.head_ref }} --output-dir ./devops/changed-sources/ --generate-delta --source-dir force-app/
-
-      - name: 'Create delta packages for new, modified or deleted metadata'
-        run: |
-          export HOME=/root
-          mkdir force-app-delta
-          sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
-          cat ./force-app-delta/package/package.xml
-          cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
       - name: Validate
         run: |
