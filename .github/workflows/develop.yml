@@ -58,10 +58,13 @@ jobs:
 
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
-          mkdir ./devops/changed-sources
-          sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./devops/changed-sources/ --generate-delta --source-dir force-app/
-          cat ./devops/changed-sources/package/package.xml
-          cat ./devops/changed-sources/destructiveChanges/destructiveChanges.xml
+          export HOME=/root
+          mkdir force-app-delta
+          sf sgd source delta --to ${{ github.HEAD_REF }} --from $(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }}) --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
+          cat ./force-app-delta/package/package.xml
+          cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
       - name: Validate
-        run: sf project deploy start --dry-run -x ./devops/changed-sources/package/package.xml --test-level ${{ steps.calculate_test_class.outputs.testLevel }} ${{ steps.calculate_test_class.outputs.testClassesToRun }} --verbose
+        run: |
+          export HOME=/root
+          sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level ${{ steps.calculate_test_class.outputs.testLevel }} ${{ steps.calculate_test_class.outputs.testClassesToRun }} --verbose
