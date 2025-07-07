@@ -46,7 +46,7 @@ jobs:
       - name: Authenticate JWT
         run: |
           echo "${{ secrets.GLOBALQA_SERVER_KEY }}" > GLOBALQA_SERVER_KEY.key
-          sf org login jwt --client-id ${{ vars.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ vars.GLOBALQA_USERNAME }} --set-default
+          sf org login jwt --client-id ${{ secrets.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ secrets.GLOBALQA_USERNAME }} --set-default
 
       # We use SFDX Git Delta to create a directory with only the metadata that has changed.
       # this allows us to deploy only those changes, as opposed to deploying the entire branch.
