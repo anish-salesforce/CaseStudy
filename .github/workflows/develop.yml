@@ -62,7 +62,7 @@ jobs:
         uses: forcedotcom/run-code-analyzer@v1
         with:
           run-command: run
-          run-arguments: --normalize-severity --severity-threshold 1 --category ${{ env.CATEGORY }} --target "./force-app-delta" --outfile SalesforceCodeAnalyzerResults.json --outfile SalesforceCodeAnalyzerResults.html
+          run-arguments: --normalize-severity --severity-threshold 1 --category ${{ env.CATEGORY }} --target "./force-app-delta" --outfile SalesforceCodeAnalyzerResults.html
           results-artifact-name: salesforce-code-analyzer-results
 
       - name: Check the Outputs to Determine Whether to Fail
