@@ -59,11 +59,11 @@ jobs:
 
       - name: Run Salesforce Code Analyzer
         id: run-code-analyzer
-        uses: forcedotcom/run-code-analyzer@v1
+        uses: forcedotcom/run-code-analyzer@v2
         with:
-          run-command: run
-          run-arguments: --normalize-severity --severity-threshold 1 --category ${{ env.CATEGORY }} --target "./force-app-delta" --outfile SalesforceCodeAnalyzerResults.html
+          run-arguments: --severity-threshold 1 --category ${{ env.CATEGORY }} --target "./force-app-delta" --outfile SalesforceCodeAnalyzerResults.html
           results-artifact-name: salesforce-code-analyzer-results
+          github-token: ${{ github.token }}
 
       - name: Check the Outputs to Determine Whether to Fail
         if: |
