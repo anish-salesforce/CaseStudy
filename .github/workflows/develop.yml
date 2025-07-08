@@ -1,4 +1,4 @@
-name: Create Pull Request Delta
+name: Validation to GlobalQA
 
 on:
   pull_request:
@@ -14,6 +14,11 @@ on:
     # when changing non-salesforce files (like this yml file).
     paths:
       - 'force-app/**'
+
+env:
+  ENGINES: "pmd"
+  CATEGORY: "Design,Best Practices,Code Style,Performance,Security"
+  OUTPUT_FILE: "scanned_reports/scan-reports.html"
 
 jobs:
   create-pull-request:
@@ -51,6 +56,24 @@ jobs:
           sf sgd source delta --to ${{ github.HEAD_REF }} --from $FROM_REF --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
+
+      - name: Run Salesforce Code Analyzer
+        id: run-code-analyzer
+        uses: forcedotcom/run-code-analyzer@v1
+        with:
+          run-command: run
+          run-arguments: --normalize-severity --severity-threshold 1 --category ${{ env.CATEGORY }} --target "./force-app-delta" --outfile SalesforceCodeAnalyzerResults.json --outfile SalesforceCodeAnalyzerResults.html
+          results-artifact-name: salesforce-code-analyzer-results
+
+      - name: Check the Outputs to Determine Whether to Fail
+        if: |
+          steps.run-code-analyzer.outputs.exit-code > 0 ||
+          steps.run-code-analyzer.outputs.num-sev1-violations > 0 
+        run:  | 
+          echo "------------------------------------"
+          echo "------PMD CODE ANALYSIS FAILED------"
+          echo "------------------------------------"
+          exit 1
 
       # Authenticate with JWT
       - name: Authenticate JWT
