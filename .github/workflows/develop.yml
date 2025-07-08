@@ -79,7 +79,7 @@ jobs:
       - name: Authenticate JWT
         run: |
           echo "${{ secrets.GLOBALQA_SERVER_KEY }}" > GLOBALQA_SERVER_KEY.key
-          sf org login jwt --client-id ${{ secrets.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ secrets.GLOBALQA_USERNAME }} --set-default
+          sf org login jwt --client-id ${{ secrets.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ secrets.GLOBALQA_USERNAME }} --set-default --alias globalqa
 
       # We use SFDX Git Delta to create a directory with only the metadata that has changed.
       # this allows us to deploy only those changes, as opposed to deploying the entire branch.
@@ -91,4 +91,29 @@ jobs:
 
       - name: Validate
         run: |
+          if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
+            if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
+              echo "Deploying Delta and not running Apex tests"
+              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
+            else 
+              echo "Deploying Delta and Runing all Local Tests since this changes introduces updates in Apex Classes and Flows"
+              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level RunLocalTests -w 100 -o globalqa --verbose
+            fi
+            if [ $? -ne 0 ]; then
+              echo "SF - deployment Failed"
+              exit 1
+            fi   
+          else
+                echo "No SF changes found. Deployment skipped"
+          fi
           sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level ${{ steps.calculate_test_class.outputs.testLevel }} ${{ steps.calculate_test_class.outputs.testClassesToRun }} --verbose
+
+      - name: Delta Destruction to target Org if there are changes to destroy. If this step fails we need to manually delete the failed components. Errors are inside the JSON node "result.details.componentFailures" for component failure
+        continue-on-error: true
+        run: |
+          if grep -q '<types>' ./force-app-delta/destructiveChanges/destructiveChanges.xml ; then
+             echo "Removing the below components: \n `cat force-app-delta/destructiveChanges/destructiveChanges.xml`"
+             sf project deploy start --target-org globalqa --post-destructive-changes ./force-app-delta/destructiveChanges/destructiveChanges.xml --manifest ./force-app-delta/destructiveChanges/package.xml --wait 15 --verbose
+          else
+             echo "No destructive changes found. Destruction step skipped"
+          fi
