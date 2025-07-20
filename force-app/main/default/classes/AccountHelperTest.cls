@@ -1,26 +1,43 @@
 @isTest
-public class AccountHelperTest {
+private class AccountHelperTest {
+
+    @testSetup
+    static void createTestData() {
+        List<Account> testAccounts = new List<Account>();
+
+        testAccounts.add(new Account(Name = 'Acme Corp', AnnualRevenue = 2000000));
+        testAccounts.add(new Account(Name = 'Beta Ltd', AnnualRevenue = 500000));
+        testAccounts.add(new Account(Name = 'Gamma Inc', AnnualRevenue = 3000000));
+
+        insert testAccounts;
+    }
 
     @isTest
-    static void testUpdateAccountTypes() {
-        // Create test data
-        Account acc1 = new Account(Name = 'Test Account 1', AnnualRevenue = 1500000);
-        Account acc2 = new Account(Name = 'Test Account 2', AnnualRevenue = 500000);
-        insert new List<Account>{acc1, acc2};
+    static void testUpdateHighValueAccounts() {
+        List<Account> accounts = [SELECT Id, Name, AnnualRevenue, Type FROM Account];
+        AccountHelper.updateHighValueAccounts(accounts);
 
-        // Re-query to get fresh references
-        List<Account> accountsToUpdate = [SELECT Id, AnnualRevenue, Type FROM Account WHERE Id IN :new List<Id>{acc1.Id, acc2.Id}];
+        for (Account acc : accounts) {
+            if (acc.AnnualRevenue > 1000000) {
+                System.assertEquals('High Value', acc.Type, 'Expected High Value Type');
+            } else {
+                System.assertEquals('Standard', acc.Type, 'Expected Standard Type');
+            }
+        }
+    }
 
-        // Call method under test
-        Test.startTest();
-        AccountHelper.updateAccountTypes(accountsToUpdate);
-        Test.stopTest();
+    @isTest
+    static void testGetHighValueAccounts() {
+        // First, run the logic to categorize the accounts
+        List<Account> accounts = [SELECT Id, AnnualRevenue FROM Account];
+        AccountHelper.updateHighValueAccounts(accounts);
 
-        // Assert
-        Account updatedAcc1 = [SELECT Type FROM Account WHERE Id = :acc1.Id];
-        Account updatedAcc2 = [SELECT Type FROM Account WHERE Id = :acc2.Id];
+        // Now fetch high-value accounts using the method under test
+        List<Account> highValueAccounts = AccountHelper.getHighValueAccounts();
 
-        System.assertEquals('Customer', updatedAcc1.Type);
-        System.assertEquals(null, updatedAcc2.Type); // Should remain unchanged
+        System.assertEquals(2, highValueAccounts.size(), 'There should be 2 high-value accounts');
+        for (Account acc : highValueAccounts) {
+            System.assertEquals('High Value', acc.Type);
+        }
     }
 }

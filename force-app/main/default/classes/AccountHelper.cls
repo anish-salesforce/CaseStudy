@@ -1,11 +1,17 @@
 public class AccountHelper {
 
-    public static void updateAccountTypes(List<Account> ACCOUNTS) { // ❌ PMD Violation: Parameter name should be camelCase
-        for (Account acc : ACCOUNTS) {
+    public static void updateHighValueAccounts(List<Account> accounts) {
+        for (Account acc : accounts) {
             if (acc.AnnualRevenue > 1000000) {
-                acc.Type = 'Customer';
-                update acc; // ❌ PMD Violation: Avoid DML statements in loops
+                acc.Type = 'High Value';
+            } else {
+                acc.Type = 'Standard';
             }
         }
+        update accounts;
+    }
+
+    public static List<Account> getHighValueAccounts() {
+        return [SELECT Id, Name, Type FROM Account WHERE Type = 'High Value'];
     }
 }
