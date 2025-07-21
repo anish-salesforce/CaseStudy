@@ -25,14 +25,14 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     container:
-      image: salesforce/cli:latest-full
+      image: salesforce/salesforcedx:latest-full
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: "Checkout"
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Install sfdx-git-delta
         run: |
