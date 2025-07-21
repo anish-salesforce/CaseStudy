@@ -36,18 +36,15 @@ jobs:
 
       - name: Install sfdx-git-delta
         run: |
-          echo y | sf plugins install sfdx-git-delta
-          echo ">>>>>>>>"
-          sf plugins
-          echo ">>>>>>>>"
-          sf version
+          echo y | sfdx plugins:install sfdx-git-delta
+          sfdx plugins --core
 
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           mkdir force-app-delta
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch origin main
-          sf sgd source delta -s force-app -t "HEAD" -f "HEAD~1" -s force-app --generate-delta --output-dir ./force-app-delta/
+          sfdx sgd:source:delta --to HEAD --from HEAD~1 -s force-app --generate-delta --output ./force-app-delta/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
