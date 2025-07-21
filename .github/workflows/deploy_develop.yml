@@ -29,7 +29,8 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: "Checkout"
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -44,7 +45,7 @@ jobs:
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           mkdir force-app-delta
-          sf sgd source delta -s force-app -t "HEAD" -f "HEAD^" -s force-app --generate-delta --output-dir ./force-app-delta/
+          sf sgd source delta -s force-app -t "HEAD" -f "HEAD~1" -s force-app --generate-delta --output-dir ./force-app-delta/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
