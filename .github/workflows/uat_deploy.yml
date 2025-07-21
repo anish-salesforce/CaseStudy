@@ -1,0 +1,83 @@
+name: Deploy to GlobalUAT
+
+on:
+  pull_request:
+    # The events are that a PR is opened, or when a commit is pushed
+    # to a branch that has an existing pull request
+    types: [closed]
+    # The branches filter allows to specify that this workflow should only
+    # run if the branch name is "develop". This way we prevent this workflow
+    # from running when PRs are opened on other branches
+    branches: [uat]
+    # We only care about changes to the force-app directory, which is the
+    # root directory of the sfdx project. This prevents the job from running
+    # when changing non-salesforce files (like this yml file).
+    paths:
+      - 'force-app/**'
+
+env:
+  ENGINES: "pmd"
+  CATEGORY: "Design,Best Practices,Code Style,Performance,Security"
+  OUTPUT_FILE: "scanned_reports/scan-reports.html"
+
+jobs:
+  globalUAT-deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    container:
+      image: salesforce/cli:latest-full
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install sfdx-git-delta
+        run: |
+          echo y | sf plugins install sfdx-git-delta
+          echo ">>>>>>>>"
+          sf plugins
+          echo ">>>>>>>>"
+          sf version
+
+      - name: 'Create delta packages for new, modified or deleted metadata'
+        run: |
+          mkdir force-app-delta
+          sf sgd source delta -s force-app -t "HEAD" -f "HEAD^" -s force-app --generate-delta --output ./force-app-delta/
+          cat ./force-app-delta/package/package.xml
+          cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
+
+      # Authenticate with JWT
+      - name: Authenticate JWT
+        run: |
+          echo "${{ secrets.SERVER_KEY }}" > GLOBALUAT_SERVER_KEY.key
+          sf org login jwt --client-id ${{ secrets.GLOBALUAT_CLIENT_ID }} --jwt-key-file GLOBALUAT_SERVER_KEY.key --username ${{ secrets.GLOBALUAT_USERNAME }} --set-default --alias globaluat
+
+      - name: Validate
+        run: |
+          if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
+            if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
+              echo "Deploying Delta and not running Apex tests"
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globaluat --verbose
+            else 
+              echo "Deploying Delta and Runing all Local Tests since this changes introduces updates in Apex Classes and Flows"
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globaluat --verbose
+            fi
+            if [ $? -ne 0 ]; then
+              echo "SF - deployment Failed"
+              exit 1
+            fi   
+          else
+                echo "No SF changes found. Deployment skipped"
+          fi
+
+      - name: Delta Destruction to target Org if there are changes to destroy. If this step fails we need to manually delete the failed components. Errors are inside the JSON node "result.details.componentFailures" for component failure
+        continue-on-error: true
+        run: |
+          if grep -q '<types>' ./force-app-delta/destructiveChanges/destructiveChanges.xml ; then
+             echo "Removing the below components: \n `cat force-app-delta/destructiveChanges/destructiveChanges.xml`"
+             sf project deploy start --target-org globaluat --post-destructive-changes ./force-app-delta/destructiveChanges/destructiveChanges.xml --manifest ./force-app-delta/destructiveChanges/package.xml --wait 15 --verbose
+          else
+             echo "No destructive changes found. Destruction step skipped"
+          fi

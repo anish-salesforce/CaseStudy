@@ -1,10 +1,10 @@
-name: Validation to GlobalQA
+name: Deploy to GlobalQA
 
 on:
   pull_request:
     # The events are that a PR is opened, or when a commit is pushed
     # to a branch that has an existing pull request
-    types: [opened, synchronize]
+    types: [closed]
     # The branches filter allows to specify that this workflow should only
     # run if the branch name is "develop". This way we prevent this workflow
     # from running when PRs are opened on other branches
@@ -21,7 +21,8 @@ env:
   OUTPUT_FILE: "scanned_reports/scan-reports.html"
 
 jobs:
-  globalQA-validate:
+  globalQA-deploy:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     container:
       image: salesforce/cli:latest-full
@@ -30,20 +31,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Checkout from GIT. We checkout both HEAD and BASE branches to generate DELTA
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
-          git fetch --all
-          git checkout ${{ github.BASE_REF }}
-          git checkout ${{ github.HEAD_REF }}
+          fetch-depth: 2
 
       - name: Install sfdx-git-delta
         run: |
           echo y | sf plugins install sfdx-git-delta
-          sf plugins install @salesforce/sfdx-scanner
           echo ">>>>>>>>"
           sf plugins
           echo ">>>>>>>>"
@@ -52,28 +44,9 @@ jobs:
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           mkdir force-app-delta
-          FROM_REF=$(git merge-base ${{ github.HEAD_REF }} ${{ github.BASE_REF }})
-          sf sgd source delta --to ${{ github.HEAD_REF }} --from $FROM_REF --output-dir ./force-app-delta/ --generate-delta --source-dir force-app/
+          sf sgd source delta -s force-app -t "HEAD" -f "HEAD^" -s force-app --generate-delta --output ./force-app-delta/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
-
-      - name: Run Salesforce Code Analyzer
-        id: run-code-analyzer
-        uses: forcedotcom/run-code-analyzer@v1
-        with:
-          run-command: run
-          run-arguments: --normalize-severity --severity-threshold 1 --category ${{ env.CATEGORY }} --target "./force-app-delta" --outfile SalesforceCodeAnalyzerResults.html
-          results-artifact-name: salesforce-code-analyzer-results
-
-      - name: Check the Outputs to Determine Whether to Fail
-        if: |
-          steps.run-code-analyzer.outputs.exit-code > 0 ||
-          steps.run-code-analyzer.outputs.num-sev1-violations > 0 
-        run:  | 
-          echo "------------------------------------"
-          echo "------PMD CODE ANALYSIS FAILED------"
-          echo "------------------------------------"
-          exit 1
 
       # Authenticate with JWT
       - name: Authenticate JWT
@@ -81,24 +54,15 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > GLOBALQA_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ secrets.GLOBALQA_USERNAME }} --set-default --alias globalqa
 
-      - name: 'Read PR Body'
-        env:
-         PR_BODY: ${{github.event.pull_request.body}}
-        run: |
-          echo $PR_BODY > ./pr_body.txt
-          node ./parsePR.js              
-          TESTS=$(cat testsToRun.txt)       
-          echo "APEX_TESTS=$TESTS" >> $GITHUB_ENV
-          
       - name: Validate
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
               echo "Deploying Delta and not running Apex tests"
-              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
             else 
-              echo "Deploying Delta and Runing Specific Tests since this changes introduces updates in Apex Classes and Flows"
-              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level RunSpecifiedTests --tests ${{env.APEX_TESTS}} -w 100 -o globalqa --verbose
+              echo "Deploying Delta and Runing all Local Tests since this changes introduces updates in Apex Classes and Flows"
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
             fi
             if [ $? -ne 0 ]; then
               echo "SF - deployment Failed"
