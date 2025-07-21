@@ -98,7 +98,7 @@ jobs:
               sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
             else 
               echo "Deploying Delta and Runing Specific Tests since this changes introduces updates in Apex Classes and Flows"
-              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --testlevel RunSpecifiedTests --runtests ${{env.APEX_TESTS}} -w 100 -o globalqa --verbose
+              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level RunSpecifiedTests --tests ${{env.APEX_TESTS}} -w 100 -o globalqa --verbose
             fi
             if [ $? -ne 0 ]; then
               echo "SF - deployment Failed"
