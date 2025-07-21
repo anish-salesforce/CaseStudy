@@ -25,26 +25,28 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     container:
-      image: salesforce/salesforcedx:latest-full
+      image: salesforce/cli:latest-full
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: "Checkout"
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Install sfdx-git-delta
         run: |
-          echo y | sfdx plugins:install sfdx-git-delta
-          sfdx plugins --core
+          echo y | sf plugins install sfdx-git-delta
+          echo ">>>>>>>>"
+          sf plugins
+          echo ">>>>>>>>"
+          sf version
 
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           mkdir force-app-delta
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch origin main
-          sfdx sgd:source:delta --to HEAD --from HEAD~1 -s force-app --generate-delta --output ./force-app-delta/
+          git fetch origin develop
+          sf sgd source delta -s force-app -t HEAD -f HEAD~1 -s force-app --generate-delta --output-dir ./force-app-delta/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
