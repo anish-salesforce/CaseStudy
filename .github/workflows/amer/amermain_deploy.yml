@@ -57,7 +57,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > AMERPROD_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.AMERPROD_CLIENT_ID }} --jwt-key-file AMERPROD_SERVER_KEY.key --username ${{ secrets.AMERPROD_USERNAME }} --set-default --alias amerprod
 
-      - name: Validate
+      - name: Deploying to AMER Main
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then

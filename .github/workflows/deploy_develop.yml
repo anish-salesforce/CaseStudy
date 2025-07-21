@@ -54,7 +54,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > GLOBALQA_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ secrets.GLOBALQA_USERNAME }} --set-default --alias globalqa
 
-      - name: Deploy
+      - name: Deploying to Global QA
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then

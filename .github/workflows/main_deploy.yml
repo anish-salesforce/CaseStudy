@@ -57,7 +57,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > GLOBALPROD_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.GLOBALPROD_CLIENT_ID }} --jwt-key-file GLOBALPROD_SERVER_KEY.key --username ${{ secrets.GLOBALPROD_USERNAME }} --set-default --alias globalprod
 
-      - name: Validate
+      - name: Deploying to Global Main
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then

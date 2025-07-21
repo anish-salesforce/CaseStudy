@@ -54,7 +54,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > AMERQA_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.AMERQA_CLIENT_ID }} --jwt-key-file AMERQA_SERVER_KEY.key --username ${{ secrets.AMERQA_USERNAME }} --set-default --alias amerqa
 
-      - name: Validate
+      - name: Deploying to AMER QA
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then

@@ -54,7 +54,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > GLOBALUAT_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.GLOBALUAT_CLIENT_ID }} --jwt-key-file GLOBALUAT_SERVER_KEY.key --username ${{ secrets.GLOBALUAT_USERNAME }} --set-default --alias globaluat
 
-      - name: Validate
+      - name: Deploying to Global UAT
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then

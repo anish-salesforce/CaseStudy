@@ -54,7 +54,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > AMERUAT_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.AMERUAT_CLIENT_ID }} --jwt-key-file AMERUAT_SERVER_KEY.key --username ${{ secrets.AMERUAT_USERNAME }} --set-default --alias ameruat
 
-      - name: Validate
+      - name: Deploying to AMER UAT
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
