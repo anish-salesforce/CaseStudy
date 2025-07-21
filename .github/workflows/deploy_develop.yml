@@ -44,7 +44,7 @@ jobs:
       - name: 'Create delta packages for new, modified or deleted metadata'
         run: |
           mkdir force-app-delta
-          sf sgd source delta -s force-app -t "HEAD" -f "HEAD^" -s force-app --generate-delta --output ./force-app-delta/
+          sf sgd source delta -s force-app -t "HEAD" -f "HEAD^" -s force-app --generate-delta --output-dir ./force-app-delta/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
 
@@ -54,7 +54,7 @@ jobs:
           echo "${{ secrets.SERVER_KEY }}" > GLOBALQA_SERVER_KEY.key
           sf org login jwt --client-id ${{ secrets.GLOBALQA_CLIENT_ID }} --jwt-key-file GLOBALQA_SERVER_KEY.key --username ${{ secrets.GLOBALQA_USERNAME }} --set-default --alias globalqa
 
-      - name: Validate
+      - name: Deploying to Global QA
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
