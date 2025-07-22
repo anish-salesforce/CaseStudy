@@ -21,7 +21,7 @@ env:
   OUTPUT_FILE: "scanned_reports/scan-reports.html"
 
 jobs:
-    amerUAT-validate:
+  amerUAT-validate:
     runs-on: ubuntu-latest
     container:
       image: salesforce/cli:latest-full

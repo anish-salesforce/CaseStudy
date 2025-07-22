@@ -14,4 +14,7 @@ public class AccountHelper {
     public static List<Account> getHighValueAccounts() {
         return [SELECT Id, Name, Type FROM Account WHERE Type = 'High Value'];
     }
+
+    //addinga new comment to test git commit
+    //adding another comment to test git commit
 }
