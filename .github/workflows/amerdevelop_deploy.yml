@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir force-app-delta
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch origin develop/amer
+          git fetch origin develop_amer
           sf sgd source delta -s force-app -t HEAD -f HEAD~1 -s force-app --generate-delta --output-dir ./force-app-delta/
           cat ./force-app-delta/package/package.xml
           cat ./force-app-delta/destructiveChanges/destructiveChanges.xml
