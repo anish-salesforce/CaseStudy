@@ -67,7 +67,7 @@ jobs:
               sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalprod --verbose
             else 
               echo "Deploying Delta and Runing all Local Tests since this changes introduces updates in Apex Classes and Flows"
-              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalprod --verbose
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level RunLocalTests -w 100 -o globalprod --verbose
             fi
             if [ $? -ne 0 ]; then
               echo "SF - deployment Failed"
