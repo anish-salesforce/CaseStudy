@@ -44,6 +44,7 @@ jobs:
         run: |
           echo y | sf plugins install sfdx-git-delta
           sf plugins install @salesforce/sfdx-scanner
+          sf plugins install agent
           echo ">>>>>>>>"
           sf plugins
           echo ">>>>>>>>"
@@ -93,6 +94,15 @@ jobs:
       - name: Validate
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
+
+            # --- Bot Deactivation Block Start ---
+            if grep -q "<name>Bot</name>" force-app-delta/package/package.xml; then
+                BOT_NAME=$(awk '/<types>/,/<\/types>/' force-app-delta/package/package.xml | awk '/<name>Bot<\/name>/{found=1} found && /<members>/{gsub(/<[^>]+>/,""); print; exit}')
+                echo "Detected Bot component: $BOT_NAME"
+                sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
+            fi
+            # --- Bot Deactivation Block End ---
+            
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
               echo "Deploying Delta and not running Apex tests"
               sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
