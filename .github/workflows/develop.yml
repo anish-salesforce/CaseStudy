@@ -93,35 +93,36 @@ jobs:
           
       - name: Validate
         run: |
-          # --- Bot Deactivation Block ---
-          BOT_NAME=$(awk '
-              /<types>/ { capture = 1; block = "" }
-              capture { block = block $0 ORS }
-              /<\/types>/ {
-                  if (block ~ /<name>Bot<\/name>/) {
-                      n = split(block, lines, ORS)
-                      for (i = 1; i <= n; i++) {
-                          if (lines[i] ~ /<members>/) {
-                              sub(/.*<members>/, "", lines[i])
-                              sub(/<\/members>.*/, "", lines[i])
-                              print lines[i]
-                              exit
-                          }
-                      }
-                  }
-                  capture = 0
-              }
-          ' "$PACKAGE_XML")
+          if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
 
-          if [ -n "$BOT_NAME" ]; then
-              echo "🔄 Detected Bot component: $BOT_NAME"
-              echo "⏸️  Deactivating Bot before deployment..."
-              sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
-          else
-              echo "✅ No Bot component found in package.xml"
-          fi
+            # --- Bot Deactivation Block (POSIX-Compatible for macOS/Linux) ---
+            BOT_NAME=$(awk '
+                /<types>/ { capture = 1; block = "" }
+                capture { block = block $0 ORS }
+                /<\/types>/ {
+                    if (block ~ /<name>Bot<\/name>/) {
+                        n = split(block, lines, ORS)
+                        for (i = 1; i <= n; i++) {
+                            if (lines[i] ~ /<members>/) {
+                                sub(/.*<members>/, "", lines[i])
+                                sub(/<\/members>.*/, "", lines[i])
+                                print lines[i]
+                                exit
+                            }
+                        }
+                    }
+                    capture = 0
+                }
+            ' "$PACKAGE_XML")
 
-          # --- Deployment Logic ---
+            if [ -n "$BOT_NAME" ]; then
+                echo "🔄 Detected Bot component: $BOT_NAME"
+                echo "⏸️  Deactivating Bot before deployment..."
+                sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
+            else
+                echo "✅ No Bot component found in package.xml"
+            fi
+
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
               echo "Deploying Delta and not running Apex tests"
               sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
