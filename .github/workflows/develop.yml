@@ -93,36 +93,21 @@ jobs:
           
       - name: Validate
         run: |
-          if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
+          # --- Bot Deactivation Block (Concise) ---
+          BOT_NAME=$(awk '
+              BEGIN { RS="</types>"; ORS="" }
+              /<name>Bot<\/name>/ {
+                  match($0, /<members>([^<]+)<\/members>/, m)
+                  if (m[1] != "") print m[1]
+              }
+          ' force-app-delta/package/package.xml)
 
-            # --- Bot Deactivation Block Start ---
-            # Extract the Bot name only if <name>Bot</name> is present (not BotVersion or others)
-            BOT_NAME=$(awk '
-            /<types>/ { in_type=1; type_block="" }
-            /<\/types>/ {
-                if (in_type) {
-                    type_block = type_block $0 ORS
-                    if (type_block ~ /<name>Bot<\/name>/) {
-                        if (type_block ~ /<members>/) {
-                            match(type_block, /<members>([^<]+)<\/members>/, arr)
-                            print arr[1]
-                            exit
-                        }
-                    }
-                    in_type=0
-                }
-            }
-            { if (in_type) type_block = type_block $0 ORS }
-            ' force-app-delta/package/package.xml)
+          [ -n "$BOT_NAME" ] && {
+              echo "Detected Bot component: $BOT_NAME"
+              sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
+          }
 
-            if [ -n "$BOT_NAME" ]; then
-                echo "Detected Bot component: $BOT_NAME"
-                sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
-            else
-                echo "No Bot component found in package.xml"
-            fi
-            # --- Bot Deactivation Block End ---
-
+            # --- Deployment Logic ---
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
               echo "Deploying Delta and not running Apex tests"
               sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
