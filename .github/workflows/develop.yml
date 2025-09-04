@@ -96,13 +96,33 @@ jobs:
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
 
             # --- Bot Deactivation Block Start ---
-            if grep -q "<name>Bot</name>" force-app-delta/package/package.xml; then
-                BOT_NAME=$(awk '/<types>/,/<\/types>/' force-app-delta/package/package.xml | awk '/<name>Bot<\/name>/{found=1} found && /<members>/{gsub(/<[^>]+>/,""); print; exit}')
+            # Extract the Bot name only if <name>Bot</name> is present (not BotVersion or others)
+            BOT_NAME=$(awk '
+            /<types>/ { in_type=1; type_block="" }
+            /<\/types>/ {
+                if (in_type) {
+                    type_block = type_block $0 ORS
+                    if (type_block ~ /<name>Bot<\/name>/) {
+                        if (type_block ~ /<members>/) {
+                            match(type_block, /<members>([^<]+)<\/members>/, arr)
+                            print arr[1]
+                            exit
+                        }
+                    }
+                    in_type=0
+                }
+            }
+            { if (in_type) type_block = type_block $0 ORS }
+            ' force-app-delta/package/package.xml)
+
+            if [ -n "$BOT_NAME" ]; then
                 echo "Detected Bot component: $BOT_NAME"
                 sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
+            else
+                echo "No Bot component found in package.xml"
             fi
             # --- Bot Deactivation Block End ---
-            
+
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
               echo "Deploying Delta and not running Apex tests"
               sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
