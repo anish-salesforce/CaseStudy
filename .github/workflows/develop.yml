@@ -113,7 +113,7 @@ jobs:
                     }
                     capture = 0
                 }
-            ' "$PACKAGE_XML")
+            ' force-app-delta/package/package.xml)
 
             if [ -n "$BOT_NAME" ]; then
                 echo "🔄 Detected Bot component: $BOT_NAME"
