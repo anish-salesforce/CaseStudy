@@ -116,6 +116,7 @@ jobs:
             ' force-app-delta/package/package.xml)
 
             if [ -n "$BOT_NAME" ]; then
+                echo "BOT_NAME=$BOT_NAME" >> $GITHUB_ENV
                 echo "🔄 Detected Bot component: $BOT_NAME"
                 echo "⏸️  Deactivating Bot before deployment..."
                 sf agent deactivate --api-name "$BOT_NAME" --target-org globalqa
@@ -147,3 +148,9 @@ jobs:
           else
              echo "No destructive changes found. Destruction step skipped"
           fi
+
+      - name: ✅ Reactivate Bot (if applicable)
+        if: env.BOT_NAME != ''
+        run: |
+          echo "🔁 Re-activating Bot: $BOT_NAME"
+          sf agent activate --api-name "$BOT_NAME" --target-org globalqa
