@@ -36,6 +36,7 @@ jobs:
       - name: Install sfdx-git-delta
         run: |
           echo y | sf plugins install sfdx-git-delta
+          sf plugins install agent
           echo ">>>>>>>>"
           sf plugins
           echo ">>>>>>>>"
@@ -59,12 +60,40 @@ jobs:
       - name: Deploying to Global QA
         run: |
           if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
+
+            # --- Agent Deactivation Block ---
+            BOT_NAME=$(awk '
+                /<types>/ { capture = 1; block = "" }
+                capture { block = block $0 ORS }
+                /<\/types>/ {
+                    if (block ~ /<name>Bot<\/name>/) {
+                        n = split(block, lines, ORS)
+                        for (i = 1; i <= n; i++) {
+                            if (lines[i] ~ /<members>/) {
+                                sub(/.*<members>/, "", lines[i])
+                                sub(/<\/members>.*/, "", lines[i])
+                                print lines[i]
+                                exit
+                            }
+                        }
+                    }
+                    capture = 0
+                }
+            ' force-app-delta/package/package.xml)
+
+            if [ -n "$BOT_NAME" ]; then
+                echo "BOT_NAME=$BOT_NAME" >> $GITHUB_ENV
+                echo "🔄 Detected Bot component: $BOT_NAME"
+            else
+                echo "✅ No Bot component found in package.xml"
+            fi
+
             if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
               echo "Deploying Delta and not running Apex tests"
-              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --ignore-conflicts --verbose
             else 
               echo "Deploying Delta and Runing all Local Tests since this changes introduces updates in Apex Classes and Flows"
-              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
+              sf project deploy start -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --ignore-conflicts --verbose
             fi
             if [ $? -ne 0 ]; then
               echo "SF - deployment Failed"
@@ -83,3 +112,10 @@ jobs:
           else
              echo "No destructive changes found. Destruction step skipped"
           fi
+
+      - name: ✅ Activating Agent (if applicable)
+        if: env.BOT_NAME != ''
+        continue-on-error: true
+        run: |
+          echo "🔁 Activating Agent: $BOT_NAME"
+          sf agent activate --api-name "$BOT_NAME" --target-org globalqa
