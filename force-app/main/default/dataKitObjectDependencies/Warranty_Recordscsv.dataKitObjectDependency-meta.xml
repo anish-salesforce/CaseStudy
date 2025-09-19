@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataKitObjectDependency xmlns="http://soap.sforce.com/2006/04/metadata">
+    <dataPackageKitDef>Test_Deployment</dataPackageKitDef>
+    <developerName>Warranty_Recordscsv</developerName>
+    <masterLabel>Warranty_Recordscsv__dll</masterLabel>
+    <sourceObject>Warranty_Recordscsv</sourceObject>
+    <sourceObjectType>DataSourceObject</sourceObjectType>
+    <targetObject>Warranty_Recordscsv</targetObject>
+</DataKitObjectDependency>
