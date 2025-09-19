@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>rel_1757241774757_end__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <label>Warranty_Records_VIN_map_Vehicle_Inf_rel</label>
+    <referenceTo>Vehicle_Information__dlm</referenceTo>
+    <relationshipLabel>Warranty_Records_VIN_map_Vehicle_Inf_rel</relationshipLabel>
+    <relationshipName>rel_1757241774757_end</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>
