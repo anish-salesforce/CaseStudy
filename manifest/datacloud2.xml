@@ -38,8 +38,8 @@
     </types>
     <types>
         <members>Contact_Detailscsv</members>
-        <members>Individual2</members>
         <members>Individual_0014</members>
+        <members>Test_New1</members>
         <name>DataKitObjectTemplate</name>
     </types>
     <types>
@@ -58,7 +58,7 @@
         <members>Test_Deployment_1758220052384</members>
         <members>Test_Deployment_1758220052927</members>
         <members>Test_Deployment_1758220053304</members>
-        <members>Test_Deployment_1758269043218</members>
+        <members>Test_Deployment_1758283234392</members>
         <name>DataPackageKitObject</name>
     </types>
     <types>
@@ -70,7 +70,7 @@
         <name>DataSourceObject</name>
     </types>
     <types>
-        <members>Vehicle_Information_OwnerEmail_map_ssot_ContactPointEmail_ssot_EmailAddress_1757</members>
+        <members>Vehicle_Information_OwnerEmail_map_ssot_ContactPointEmail_ssot_EmailAddress_1757241380485</members>
         <members>Warranty_Records_VIN_map_Vehicle_Information_VIN_1757241774757</members>
         <name>FieldSrcTrgtRelationship</name>
     </types>

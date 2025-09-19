@@ -3,11 +3,11 @@
     <dataKitSource>LOCAL</dataKitSource>
     <dataKitType>SANDBOX</dataKitType>
     <dataSpaceDefinitionDevName>default</dataSpaceDefinitionDevName>
-    <deploymentOrder>{&quot;isAutoSequence&quot;:false,&quot;sequence&quot;:[{&quot;devName&quot;:&quot;Contact_Detailscsv&quot;,&quot;type&quot;:&quot;MktDataLakeObject&quot;},{&quot;devName&quot;:&quot;Individual_0014&quot;,&quot;type&quot;:&quot;IdentityResolution&quot;},{&quot;devName&quot;:&quot;Individual2&quot;,&quot;type&quot;:&quot;DataSemanticSearch&quot;}]}</deploymentOrder>
+    <deploymentOrder>{&quot;isAutoSequence&quot;:false,&quot;sequence&quot;:[{&quot;devName&quot;:&quot;Contact_Detailscsv&quot;,&quot;type&quot;:&quot;MktDataLakeObject&quot;},{&quot;devName&quot;:&quot;Individual_0014&quot;,&quot;type&quot;:&quot;IdentityResolution&quot;},{&quot;devName&quot;:&quot;Test_New1&quot;,&quot;type&quot;:&quot;DataGraph&quot;}]}</deploymentOrder>
     <developerName>Test_Deployment</developerName>
     <isDeployed>false</isDeployed>
     <isEnabled>false</isEnabled>
     <masterLabel>Test Deployment</masterLabel>
     <useDeterministicNaming>false</useDeterministicNaming>
-    <versionNumber>6.0</versionNumber>
+    <versionNumber>7.0</versionNumber>
 </DataPackageKitDefinition>
