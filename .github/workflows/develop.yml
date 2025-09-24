@@ -96,15 +96,15 @@ jobs:
           
       - name: Validate
         run: |
-          if [ $(wc -l < manifest/package.xml) -gt 4 ]; then
-            APEX_COMPONENTS_COUNT=$(grep -E '<name>(ApexClass|ApexTrigger)</name>' manifest/package.xml | wc -l)
+          if [ $(wc -l < force-app-delta/package/package.xml) -gt 4 ]; then
+            APEX_COMPONENTS_COUNT=$(grep -E '<name>(ApexClass|ApexTrigger)</name>' force-app-delta/package/package.xml | wc -l)
 
             if [ "$APEX_COMPONENTS_COUNT" -gt 0 ]; then
               echo "Deploying Delta and Running Specific Tests since changes include Apex Classes, Triggers"
-              sf project deploy start --dry-run -x ./manifest/package.xml --test-level RunSpecifiedTests --tests ${{env.APEX_TESTS}} -w 100 -o globalqa --verbose
+              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level RunSpecifiedTests --tests ${{env.APEX_TESTS}} -w 100 -o globalqa --verbose
             else
               echo "Deploying Delta without running Apex tests"
-              sf project deploy start --dry-run -x ./manifest/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
+              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
             fi
 
             if [ $? -ne 0 ]; then
