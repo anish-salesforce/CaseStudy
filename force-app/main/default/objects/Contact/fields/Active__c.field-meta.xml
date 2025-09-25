@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Active__c</fullName>
     <defaultValue>false</defaultValue>
-    <description>Build for story US-1234</description>
+    <description>Build for story US-2347</description>
     <label>Active</label>
     <trackFeedHistory>false</trackFeedHistory>
     <trackHistory>false</trackHistory>

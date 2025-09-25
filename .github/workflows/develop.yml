@@ -44,6 +44,10 @@ jobs:
         run: |
           echo y | sf plugins install sfdx-git-delta
           sf plugins install @salesforce/sfdx-scanner
+          echo "--------installing vlocity--------"
+          npm install -g vlocity
+          echo "--------installing Puppeteer--------"
+          npm install -g puppeteer
           echo ">>>>>>>>"
           sf plugins
           echo ">>>>>>>>"
@@ -92,20 +96,23 @@ jobs:
           
       - name: Validate
         run: |
-          if [ $(cat force-app-delta/package/package.xml | wc -l) -gt 4 ];then
-            if [ $(egrep 'name>ApexClass|name>Apextrigger|name>Flow' force-app-delta/package/package.xml | wc -l) -gt 1 ];then
-              echo "Deploying Delta and not running Apex tests"
-              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
-            else 
-              echo "Deploying Delta and Runing Specific Tests since this changes introduces updates in Apex Classes and Flows"
+          if [ $(wc -l < force-app-delta/package/package.xml) -gt 4 ]; then
+            APEX_COMPONENTS_COUNT=$(grep -E '<name>(ApexClass|ApexTrigger)</name>' force-app-delta/package/package.xml | wc -l)
+
+            if [ "$APEX_COMPONENTS_COUNT" -gt 0 ]; then
+              echo "Deploying Delta and Running Specific Tests since changes include Apex Classes, Triggers"
               sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level RunSpecifiedTests --tests ${{env.APEX_TESTS}} -w 100 -o globalqa --verbose
+            else
+              echo "Deploying Delta without running Apex tests"
+              sf project deploy start --dry-run -x ./force-app-delta/package/package.xml --test-level NoTestRun -w 100 -o globalqa --verbose
             fi
+
             if [ $? -ne 0 ]; then
-              echo "SF - deployment Failed"
+              echo "SF - Deployment Failed"
               exit 1
-            fi   
+            fi
           else
-                echo "No SF changes found. Deployment skipped"
+            echo "No SF changes found. Deployment skipped"
           fi
 
       - name: Delta Destruction to target Org if there are changes to destroy. If this step fails we need to manually delete the failed components. Errors are inside the JSON node "result.details.componentFailures" for component failure
@@ -116,4 +123,14 @@ jobs:
              sf project deploy start --target-org globalqa --post-destructive-changes ./force-app-delta/destructiveChanges/destructiveChanges.xml --manifest ./force-app-delta/destructiveChanges/package.xml --wait 15 --verbose
           else
              echo "No destructive changes found. Destruction step skipped"
+          fi
+      
+      - name: Run Vlocity EPC Deployment
+        continue-on-error: true
+        run: |
+          if [ -f "epc-deploy.yaml" ]; then
+            echo "Running EPC Vlocity Deployment..."
+            vlocity -job epc-deploy.yaml -sfdx.username "${{ secrets.GLOBALQA_USERNAME }}" packDeploy
+          else
+            echo "epc-deploy.yaml not found. Skipping deployment."
           fi
